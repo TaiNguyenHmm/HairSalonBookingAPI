@@ -1,0 +1,169 @@
+﻿@page
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký - Hair Salon Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Playfair Display', serif;
+        }
+
+        .register-bg {
+            background-color: #f7fafc;
+            background-image: linear-gradient(rgba(237, 242, 247, 0.8), rgba(237, 242, 247, 0.8)), url('https://placehold.co/1920x1080/e2e8f0/ffffff?text=Beauty+Salon');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .dark .register-bg {
+            background-color: #1a202c;
+            background-image: linear-gradient(rgba(26, 32, 44, 0.9), rgba(26, 32, 44, 0.9)), url('https://placehold.co/1920x1080/2d3748/ffffff?text=Beauty+Salon');
+        }
+    </style>
+</head>
+<body class="register-bg dark:bg-gray-900">
+
+    <div class="min-h-screen flex flex-col items-center justify-center px-4 py-12">
+
+        <div class="text-center mb-8">
+            <a href="/" class="text-4xl font-bold text-gray-800 dark:text-white">HairSalon</a>
+        </div>
+
+        <div class="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8">
+            <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2">Tạo tài khoản mới</h2>
+            <p class="text-center text-gray-600 dark:text-gray-400 mb-8">Bắt đầu hành trình làm đẹp của bạn ngay hôm nay.</p>
+
+            <!-- Form này sẽ gọi API để tạo user mới -->
+            <form id="register-form" action="#" method="POST">
+                <!-- Thông báo lỗi (hiển thị khi cần) -->
+                <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+                    <strong class="font-bold">Lỗi!</strong>
+                    <span id="error-text" class="block sm:inline">Thông tin đăng ký không hợp lệ.</span>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tên đăng nhập</label>
+                        <div class="mt-1">
+                            <input id="username" name="username" type="text" autocomplete="username" required
+                                   class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                   placeholder="tên đăng nhập của bạn">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+                        <div class="mt-1">
+                            <input id="email" name="email" type="email" autocomplete="email" required
+                                   class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                   placeholder="you@example.com">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Số điện thoại</label>
+                        <div class="mt-1">
+                            <input id="phone" name="phone" type="tel" autocomplete="tel"
+                                   class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                   placeholder="09xxxxxxxx">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mật khẩu</label>
+                        <div class="mt-1">
+                            <input id="password" name="password" type="password" autocomplete="new-password" required
+                                   class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                   placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="confirm-password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Xác nhận mật khẩu</label>
+                        <div class="mt-1">
+                            <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" required
+                                   class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                   placeholder="••••••••">
+                        </div>
+                    </div>
+
+                    <div>
+                        <button type="submit"
+                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">
+                            Đăng ký
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <p class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
+                Đã có tài khoản?
+
+                <a href="/Authentication/Login" class="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                    Đăng nhập ngay
+                </a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const registerForm = document.getElementById('register-form');
+            const errorMessageContainer = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
+
+                   registerForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            if (password !== confirmPassword) {
+                errorText.textContent = 'Mật khẩu xác nhận không khớp.';
+                errorMessageContainer.classList.remove('hidden');
+                return;
+            }
+            errorMessageContainer.classList.add('hidden');
+
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+
+            const userData = { username, email, phone, password };
+
+            fetch('https://localhost:7144/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            })
+            .then(response => response.json().then(data => ({ status: response.status, body: data })))
+            .then(({ status, body }) => {
+                if (status !== 201) {
+                    errorText.textContent = body.message || 'Đăng ký không thành công.';
+                    errorMessageContainer.classList.remove('hidden');
+                } else {
+                    alert('Đăng ký thành công! Vui lòng đăng nhập.');
+                    window.location.href = '/Authentication/Login';
+                }
+            })
+            .catch(error => {
+                errorText.textContent = 'Đã có lỗi xảy ra. Vui lòng thử lại.';
+                errorMessageContainer.classList.remove('hidden');
+            });
+        });
+
+        });
+    </script>
+
+</body>
+</html>
