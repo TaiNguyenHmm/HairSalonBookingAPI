@@ -42,7 +42,13 @@ namespace WebAPI
             builder.Services.AddScoped<IStylistRepository, StylistRepository>();
             builder.Services.AddAutoMapper(typeof(StylistProfile).Assembly);
 
-
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowWebApp",
+                    policy => policy.WithOrigins("https://localhost:7285") // Đúng port của WebApp
+                                    .AllowAnyHeader()
+                                    .AllowAnyMethod());
+            });
 
 
             var app = builder.Build();
@@ -55,6 +61,8 @@ namespace WebAPI
 
             app.UseHttpsRedirection();
             app.UseAuthorization();
+            app.UseCors("AllowWebApp");
+
             app.MapControllers();
             app.Run();
         }

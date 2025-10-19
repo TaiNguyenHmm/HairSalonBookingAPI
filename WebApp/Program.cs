@@ -27,6 +27,13 @@ namespace WebApp
             app.UseAuthorization();
 
             app.MapRazorPages();
+            app.MapRazorPages();
+            app.MapGet("/", context =>
+            {
+                context.Response.Redirect("/Home");
+                return Task.CompletedTask;
+            });
+
 
             app.Run();
         }
