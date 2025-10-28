@@ -3,6 +3,7 @@ using BusinessObjects;
 using DataAccessObjects.Models;
 using Microsoft.AspNetCore.Mvc;
 using Repositories;
+using Services;
 
 namespace WebAPI.Controllers
 {
@@ -13,12 +14,16 @@ namespace WebAPI.Controllers
         private readonly IStylistRepository _repo;
         private readonly IMapper _mapper;
 
+
+
         public StylistController(IStylistRepository repo, IMapper mapper)
         {
             _repo = repo;
             _mapper = mapper;
+
         }
 
+        // ==================== CRUD ====================
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -63,5 +68,8 @@ namespace WebAPI.Controllers
             await _repo.DeleteAsync(id);
             return NoContent();
         }
+      
+
+
     }
 }

@@ -10,19 +10,21 @@ namespace WebAPI.Controllers
     [Route("api/[controller]")]
     public class ServiceController : ControllerBase
     {
-        private readonly IServiceRepository _repo;
+        private readonly IStylistRepository _repo;
+        private readonly IServiceRepository _serviceRepo;
         private readonly IMapper _mapper;
 
-        public ServiceController(IServiceRepository repo, IMapper mapper)
+        public ServiceController(IStylistRepository repo, IServiceRepository serviceRepo, IMapper mapper)
         {
             _repo = repo;
+            _serviceRepo = serviceRepo;
             _mapper = mapper;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var services = await _repo.GetAllAsync();
+            var services = await _serviceRepo.GetAllAsync();
             var dtos = _mapper.Map<IEnumerable<ServiceDto>>(services);
             return Ok(dtos);
         }
@@ -30,7 +32,7 @@ namespace WebAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var service = await _repo.GetByIdAsync(id);
+            var service = await _serviceRepo.GetByIdAsync(id);
             if (service == null) return NotFound();
             return Ok(_mapper.Map<ServiceDto>(service));
         }
@@ -40,7 +42,7 @@ namespace WebAPI.Controllers
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
             var service = _mapper.Map<Service>(dto);
-            await _repo.AddAsync(service);
+            await _serviceRepo.AddAsync(service);
             return CreatedAtAction(nameof(GetById), new { id = service.Id }, _mapper.Map<ServiceDto>(service));
         }
 
@@ -48,20 +50,23 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Update(int id, [FromBody] ServiceDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
-            var service = await _repo.GetByIdAsync(id);
+            var service = await _serviceRepo.GetByIdAsync(id);
             if (service == null) return NotFound();
             _mapper.Map(dto, service);
-            await _repo.UpdateAsync(service);
+            await _serviceRepo.UpdateAsync(service);
             return NoContent();
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var service = await _repo.GetByIdAsync(id);
+            var service = await _serviceRepo.GetByIdAsync(id);
             if (service == null) return NotFound();
-            await _repo.DeleteAsync(id);
+            await _serviceRepo.DeleteAsync(id);
             return NoContent();
         }
+
+       
+
     }
 }

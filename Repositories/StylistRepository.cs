@@ -42,5 +42,19 @@ namespace Repositories
                 await _context.SaveChangesAsync();
             }
         }
+        public async Task<IEnumerable<StylistWorkingHour>> GetWorkingHoursAsync(int stylistId, int dayOfWeek)
+        {
+            return await _context.StylistWorkingHours
+                .Where(w => w.StylistId == stylistId && w.DayOfWeek == dayOfWeek)
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<Booking>> GetBookingsAsync(int stylistId, DateTime date)
+        {
+            return await _context.Bookings
+                .Where(b => b.StylistId == stylistId && b.StartTime.Date == date.Date)
+                .ToListAsync();
+        }
+
     }
 }

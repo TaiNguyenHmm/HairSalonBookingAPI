@@ -1,7 +1,5 @@
 ﻿@page
 
-
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -107,44 +105,90 @@
         </div>
     </div>
 
+    @* <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          const loginForm = document.getElementById('login-form');
+          const errorMessage = document.getElementById('error-message');
+
+          loginForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            errorMessage.classList.add('hidden');
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
+
+            fetch('https://localhost:7144/api/auth/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, password, rememberMe })
+            })
+            .then(res => {
+              if (!res.ok) throw new Error('Login failed');
+              return res.json();
+            })
+            .then(data => {
+              // lưu token vào storage (tùy nhu cầu)
+              (rememberMe ? localStorage : sessionStorage).setItem('jwtToken', data.token);
+
+              // đặt cookie cho WebApp để MVC đọc (chỉ secure khi https)
+              const secureFlag = location.protocol === 'https:' ? '; secure' : '';
+              document.cookie = `jwt=${data.token}; path=/; SameSite=Lax${secureFlag}`;
+
+              // đợi cookie ghi xong rồi điều hướng
+              setTimeout(() => {
+                if (data.role && data.role.toLowerCase() === 'admin') {
+                  location.href = data.redirectTo || '/AdminDashboard/Dashboard';
+                } else {
+                  location.href = '/ServicesCustomer/Services';
+                }
+              }, 50);
+            })
+            .catch(() => errorMessage.classList.remove('hidden'));
+          });
+        });
+    </script> *@
     <script>
-                   document.addEventListener('DOMContentLoaded', function () {
-            const loginForm = document.getElementById('login-form');
-            const errorMessage = document.getElementById('error-message');
+               document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const rememberMe = document.getElementById('remember-me').checked;
 
-            loginForm.addEventListener('submit', function (e) {
-                e.preventDefault();
-                errorMessage.classList.add('hidden');
-                const username = document.getElementById('username').value;
-                const password = document.getElementById('password').value;
-                const rememberMe = document.getElementById('remember-me').checked;
-
-                fetch('https://localhost:7144/api/auth/login', {
+            try {
+                const res = await fetch('https://localhost:7144/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password, rememberMe })
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        errorMessage.classList.remove('hidden');
-                        throw new Error('Login failed');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (rememberMe) {
-                        localStorage.setItem('jwtToken', data.token);
-                    } else {
-                        sessionStorage.setItem('jwtToken', data.token);
-                    }
+                });
+                if (!res.ok) throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
+
+                const data = await res.json();
+                const token = data.token;
+                localStorage.setItem('jwtToken', token); // lưu token
+
+                console.log('[Login] Token lưu vào localStorage:', token);
+
+                // redirect theo role
+                if (data.role?.toLowerCase() === 'admin') {
+                    window.location.href = '/AdminDashboard/Dashboard';
+                } else {
                     window.location.href = '/ServicesCustomer/Services';
-                })
-                .catch(() => errorMessage.classList.remove('hidden'));
-            });
+                }
+
+            } catch (err) {
+                console.error('[Login] Error:', err);
+                document.getElementById('error-message').textContent = err.message;
+            }
         });
 
-
     </script>
+
+
+
+
+
+
 
 </body>
 </html>

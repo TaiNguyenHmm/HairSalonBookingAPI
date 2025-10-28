@@ -1,0 +1,20 @@
+﻿@* Không dùng @model để tránh lỗi kiểu dữ liệu *@
+<header class="bg-white dark:bg-gray-800 shadow-sm sticky top-0 z-50">
+    <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+        <a href="/" class="text-2xl font-bold text-gray-800 dark:text-white">HairSalon</a>
+        <div class="flex items-center space-x-6">
+            <a href="/services" class="text-indigo-600 dark:text-indigo-400 font-semibold border-b-2 border-indigo-500 pb-1">Dịch vụ</a>
+            <a href="/bookings" class="text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400">Lịch hẹn của tôi</a>
+
+            <!-- User Avatar -->
+            <button title="Hồ sơ của bạn" class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-indigo-400 transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500 dark:text-gray-400">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+            </button>
+
+            <a href="#" id="logout-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition duration-300 shadow-sm hover:shadow-md">Đăng xuất</a>
+        </div>
+    </nav>
+</header>

@@ -10,7 +10,9 @@ namespace BusinessObjects
   {
     public ServiceProfile()
     {
-      CreateMap<DataAccessObjects.Models.Service, ServiceDto>().ReverseMap();
-    }
+            CreateMap<DataAccessObjects.Models.Service, BusinessObjects.ServiceDto>()
+                        .ForMember(dest => dest.DurationMinutes, opt => opt.MapFrom(src => src.DurationMinutes))
+                        .ReverseMap();
+        }
     }
 }
