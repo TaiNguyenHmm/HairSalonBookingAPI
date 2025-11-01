@@ -1,6 +1,7 @@
 ﻿using BusinessObjects;
 using DataAccessObjects.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -34,6 +35,9 @@ builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 builder.Services.AddAutoMapper(typeof(ServiceProfile).Assembly);
 builder.Services.AddAutoMapper(typeof(StylistProfile).Assembly);
 builder.Services.AddAutoMapper(typeof(BookingProfile).Assembly);
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
 
 // ==========================
 // Controllers + OData + XML
