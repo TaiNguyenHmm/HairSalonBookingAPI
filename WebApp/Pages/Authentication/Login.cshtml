@@ -21,14 +21,14 @@
 
         .login-bg {
             background-color: #f7fafc;
-            background-image: linear-gradient(rgba(237, 242, 247, 0.8), rgba(237, 242, 247, 0.8)), url('https://placehold.co/1920x1080/e2e8f0/ffffff?text=Beauty+Salon');
+            background-image: linear-gradient(rgba(237,242,247,0.8), rgba(237,242,247,0.8)), url('https://placehold.co/1920x1080/e2e8f0/ffffff?text=Beauty+Salon');
             background-size: cover;
             background-position: center;
         }
 
         .dark .login-bg {
             background-color: #1a202c;
-            background-image: linear-gradient(rgba(26, 32, 44, 0.9), rgba(26, 32, 44, 0.9)), url('https://placehold.co/1920x1080/2d3748/ffffff?text=Beauty+Salon');
+            background-image: linear-gradient(rgba(26,32,44,0.9), rgba(26,32,44,0.9)), url('https://placehold.co/1920x1080/2d3748/ffffff?text=Beauty+Salon');
         }
     </style>
 </head>
@@ -44,60 +44,52 @@
             <h2 class="text-3xl font-bold text-center text-gray-900 dark:text-white mb-2">Chào mừng trở lại!</h2>
             <p class="text-center text-gray-600 dark:text-gray-400 mb-8">Đăng nhập để tiếp tục đặt lịch.</p>
 
-            <!-- Form này sẽ là nơi bạn xử lý logic gọi API để lấy JWT Token -->
-            <form id="login-form" action="#" method="POST">
-                <!-- Thông báo lỗi (hiển thị khi cần) -->
-                <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative mb-6" role="alert">
+            <!-- FORM LOGIN AJAX -->
+            <form id="login-form" class="space-y-6">
+                <!-- Thông báo lỗi -->
+                <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6" role="alert">
                     <strong class="font-bold">Lỗi!</strong>
                     <span class="block sm:inline">Tên đăng nhập hoặc mật khẩu không chính xác.</span>
                 </div>
 
-                <div class="space-y-6">
-                    <div>
-                        <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tên đăng nhập hoặc Email</label>
-                        <div class="mt-1">
-                            <input id="username" name="username" type="text" autocomplete="username" required
-                                   class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                   placeholder="nhập username hoặc email">
-                        </div>
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tên đăng nhập hoặc Email</label>
+                    <input id="username" name="username" type="text" autocomplete="username" required
+                           class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="nhập username hoặc email">
+                </div>
+
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mật khẩu</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required
+                           class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                           placeholder="••••••••">
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <input id="remember-me" name="remember-me" type="checkbox"
+                               class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                        <label for="remember-me" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">Ghi nhớ tôi</label>
                     </div>
 
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mật khẩu</label>
-                        <div class="mt-1">
-                            <input id="password" name="password" type="password" autocomplete="current-password" required
-                                   class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                                   placeholder="••••••••">
-                        </div>
+                    <div class="text-sm">
+                        <a href="/Authentication/ForgotPassword" class="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+                            Quên mật khẩu?
+                        </a>
                     </div>
+                </div>
 
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center">
-                            <input id="remember-me" name="remember-me" type="checkbox"
-                                   class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                            <label for="remember-me" class="ml-2 block text-sm text-gray-900 dark:text-gray-300">Ghi nhớ tôi</label>
-                        </div>
-
-                        <div class="text-sm">
-                            <a href="/Authentication/ForgotPassword " class="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
-                                Quên mật khẩu?
-                            </a>
-                        </div>
-                    </div>
-
-                    <div>
-                        <button type="submit"
-                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">
-                            Đăng nhập
-                        </button>
-                    </div>
+                <div>
+                    <button type="submit"
+                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300">
+                        Đăng nhập
+                    </button>
                 </div>
             </form>
 
             <p class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
                 Chưa có tài khoản?
-
-
                 <a href="/Authentication/Register" class="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
                     Đăng ký ngay
                 </a>
@@ -105,88 +97,53 @@
         </div>
     </div>
 
-    @* <script>
-        document.addEventListener('DOMContentLoaded', function () {
-          const loginForm = document.getElementById('login-form');
-          const errorMessage = document.getElementById('error-message');
-
-          loginForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            errorMessage.classList.add('hidden');
-
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            const rememberMe = document.getElementById('remember-me').checked;
-
-            fetch('https://localhost:7144/api/auth/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ username, password, rememberMe })
-            })
-            .then(res => {
-              if (!res.ok) throw new Error('Login failed');
-              return res.json();
-            })
-            .then(data => {
-              // lưu token vào storage (tùy nhu cầu)
-              (rememberMe ? localStorage : sessionStorage).setItem('jwtToken', data.token);
-
-              // đặt cookie cho WebApp để MVC đọc (chỉ secure khi https)
-              const secureFlag = location.protocol === 'https:' ? '; secure' : '';
-              document.cookie = `jwt=${data.token}; path=/; SameSite=Lax${secureFlag}`;
-
-              // đợi cookie ghi xong rồi điều hướng
-              setTimeout(() => {
-                if (data.role && data.role.toLowerCase() === 'admin') {
-                  location.href = data.redirectTo || '/AdminDashboard/Dashboard';
-                } else {
-                  location.href = '/ServicesCustomer/Services';
-                }
-              }, 50);
-            })
-            .catch(() => errorMessage.classList.remove('hidden'));
-          });
-        });
-    </script> *@
     <script>
-               document.getElementById('login-form').addEventListener('submit', async function(e) {
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
+            const errorEl = document.getElementById('error-message');
+            errorEl.classList.add('hidden');
+
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const rememberMe = document.getElementById('remember-me').checked;
 
             try {
+                // Gọi WebAPI để lấy JWT
                 const res = await fetch('https://localhost:7144/api/auth/login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password, rememberMe })
                 });
+
                 if (!res.ok) throw new Error('Tên đăng nhập hoặc mật khẩu không đúng.');
 
                 const data = await res.json();
                 const token = data.token;
-                localStorage.setItem('jwtToken', token); // lưu token
 
-                console.log('[Login] Token lưu vào localStorage:', token);
+                // Lưu token vào localStorage/sessionStorage
+                (rememberMe ? localStorage : sessionStorage).setItem('jwtToken', token);
 
-                // redirect theo role
-                if (data.role?.toLowerCase() === 'admin') {
+                // ⚡ Gửi token sang Web App để tạo cookie (Razor Page + AdminOnly policy)
+                await fetch('/Authentication/SignInWithToken', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+
+                // Redirect theo role
+                if (data.role && data.role.toLowerCase() === 'admin') {
                     window.location.href = '/AdminDashboard/Dashboard';
                 } else {
                     window.location.href = '/ServicesCustomer/Services';
                 }
 
             } catch (err) {
-                console.error('[Login] Error:', err);
-                document.getElementById('error-message').textContent = err.message;
+                console.error(err);
+                errorEl.classList.remove('hidden');
+                errorEl.querySelector('span').textContent = err.message;
             }
         });
-
     </script>
-
-
-
-
 
 
 

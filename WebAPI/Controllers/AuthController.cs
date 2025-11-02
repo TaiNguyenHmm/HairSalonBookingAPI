@@ -53,20 +53,23 @@ public class AuthController : ControllerBase
     //        username = user.Username
     //    });
     //}
+
     [HttpPost("login")]
-    [AllowAnonymous]   // ✅ Cho phép gọi mà không cần token
+    [AllowAnonymous]
     public IActionResult Login([FromBody] LoginDto model)
     {
         var user = _context.Users.SingleOrDefault(u =>
-            u.Username.ToLower() == model.Username.ToLower().Trim());
+            u.Username.ToLower().Trim() == model.Username.ToLower().Trim());
 
         if (user == null)
             return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu!" });
 
         var hasher = new PasswordHasher<User>();
-        if (hasher.VerifyHashedPassword(user, user.PasswordHash, model.Password) == PasswordVerificationResult.Failed)
+        if (hasher.VerifyHashedPassword(user, user.PasswordHash, model.Password)
+            == PasswordVerificationResult.Failed)
             return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu!" });
 
+        // Sinh token
         var token = JwtHelper.GenerateToken(user, _configuration, TimeSpan.FromHours(9));
 
         return Ok(new
@@ -76,8 +79,6 @@ public class AuthController : ControllerBase
             role = user.Role
         });
     }
-
-
 
 
 

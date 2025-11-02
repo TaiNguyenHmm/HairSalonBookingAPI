@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.DataProtection.KeyManagement;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
@@ -12,14 +13,6 @@ namespace WebApp
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            if (builder.Environment.IsDevelopment())
-            {
-                builder.Logging.ClearProviders();
-                builder.Logging.AddConsole();
-                builder.Logging.AddDebug();
-                builder.Configuration.AddJsonFile("appsettings.Development.json", optional: true, reloadOnChange: true);
-            }
-
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages(options =>
             {
@@ -31,60 +24,18 @@ namespace WebApp
                 c.BaseAddress = new Uri("https://localhost:7144");
                 c.DefaultRequestHeaders.Accept.ParseAdd("application/json");
             });
+
             builder.Services.AddHttpContextAccessor();
 
-            var issuer = builder.Configuration["Jwt:Issuer"];
-            var audience = builder.Configuration["Jwt:Audience"];
             var keyStr = builder.Configuration["Jwt:Key"];
-
-            if (string.IsNullOrWhiteSpace(issuer)) throw new InvalidOperationException("Missing Jwt:Issuer in WebApp appsettings.");
-            if (string.IsNullOrWhiteSpace(audience)) throw new InvalidOperationException("Missing Jwt:Audience in WebApp appsettings.");
-            if (string.IsNullOrWhiteSpace(keyStr)) throw new InvalidOperationException("Missing Jwt:Key in WebApp appsettings.");
-
-            var keyBytes = Encoding.UTF8.GetBytes(keyStr);
-            if (keyBytes.Length < 32)
-                throw new InvalidOperationException($"Jwt:Key must be >= 32 bytes. Current: {keyBytes.Length}.");
-            var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!);
-            var signingKey = new SymmetricSecurityKey(keyBytes);
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-               .AddJwtBearer(opt =>
-               {
-                   opt.TokenValidationParameters = new TokenValidationParameters
-                   {
-                       ValidateIssuer = true,
-                       ValidateAudience = true,
-                       ValidateIssuerSigningKey = true,
-                       ValidIssuer = builder.Configuration["Jwt:Issuer"],
-                       ValidAudience = builder.Configuration["Jwt:Audience"],
-                       IssuerSigningKey = new SymmetricSecurityKey(key),
-                       NameClaimType = ClaimTypes.NameIdentifier,
-                       RoleClaimType = ClaimTypes.Role,
-                       ClockSkew = TimeSpan.FromMinutes(5)
-                   };
-
-                   // 👇 Thêm phần này để log lỗi chi tiết
-                   opt.Events = new JwtBearerEvents
-                   {
-                       OnAuthenticationFailed = ctx =>
-                       {
-                           Console.WriteLine("❌ JWT lỗi: " + ctx.Exception.Message);
-                           if (ctx.Exception.InnerException != null)
-                               Console.WriteLine("   ↳ Inner: " + ctx.Exception.InnerException.Message);
-                           return Task.CompletedTask;
-                       },
-                       OnTokenValidated = ctx =>
-                       {
-                           Console.WriteLine("✅ JWT hợp lệ cho user: " + ctx.Principal.Identity?.Name);
-                           return Task.CompletedTask;
-                       },
-                       OnMessageReceived = ctx =>
-                       {
-                           Console.WriteLine("🔹 Token nhận được: " + ctx.Token);
-                           return Task.CompletedTask;
-                       }
-                   };
-               });
-
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Authentication/Login";
+                    options.AccessDeniedPath = "/Authentication/AccessDenied";
+                    options.ExpireTimeSpan = TimeSpan.FromHours(9);
+                    options.SlidingExpiration = true;
+                });
 
             builder.Services.AddAuthorization(o =>
             {
@@ -99,42 +50,63 @@ namespace WebApp
                 app.UseHsts();
             }
 
-            app.Logger.LogInformation("WebApp JWT loaded: Issuer={Issuer}, Audience={Audience}, KeyLen={Len}",
-                issuer, audience, keyBytes.Length);
-
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
             app.UseRouting();
+
+            // Debug middleware
+            app.Use(async (context, next) =>
+            {
+                var user = context.User;
+                if (user?.Identity?.IsAuthenticated == true)
+                {
+                    Console.WriteLine("User authenticated:");
+                    foreach (var c in user.Claims)
+                        Console.WriteLine($" - {c.Type}: {c.Value}");
+                }
+                else
+                {
+                    Console.WriteLine("User NOT authenticated");
+                }
+
+                await next();
+            });
+
+            // Endpoint nhận JWT từ WebAPI và tạo cookie
+            app.MapPost("/Authentication/SignInWithToken", async (HttpContext http, [FromBody] TokenDto dto) =>
+            {
+                var handler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+                var token = handler.ReadJwtToken(dto.Token);
+
+                var claims = new List<Claim>();
+                foreach (var c in token.Claims)
+                {
+                    if (c.Type == "role")
+                        claims.Add(new Claim(ClaimTypes.Role, c.Value));
+                    else if (c.Type == "name" || c.Type == "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")
+                        claims.Add(new Claim(ClaimTypes.Name, c.Value));
+                    else
+                        claims.Add(new Claim(c.Type, c.Value));
+                }
+
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+
+                await http.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
+                    new AuthenticationProperties { IsPersistent = true });
+
+                return Results.Ok();
+            });
 
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapGet("/whoami", (HttpContext http) =>
-            {
-                var user = http.User;
-                var claims = user.Claims.Select(c => new { c.Type, c.Value });
-                return Results.Json(new
-                {
-                    Authenticated = user.Identity?.IsAuthenticated,
-                    Name = user.Identity?.Name,
-                    Claims = claims
-                });
-            });
-
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
-
+            app.MapGet("/", () => Results.Redirect("/Home"));
             app.MapRazorPages();
-
-            app.MapGet("/", context =>
-            {
-                context.Response.Redirect("/Home");
-                return Task.CompletedTask;
-            });
-
             app.Run();
         }
     }
+
+    // TokenDto khai báo bên ngoài Main
+    public record TokenDto(string Token);
 }
