@@ -1,0 +1,194 @@
+﻿@* /Pages/Admin/ManageBookings.cshtml *@
+@page
+@model ManageBookingsModel
+@{
+    ViewData["Title"] = "Quản lý Bookings - Hair Salon Admin";
+    Layout = "/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Filters -->
+<div class="mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md flex flex-wrap items-center gap-4">
+    <div class="flex-grow min-w-[200px]">
+        <label for="search" class="text-sm font-medium text-gray-700 dark:text-gray-300">Tìm kiếm</label>
+        <input type="text" id="search" placeholder="Tên khách hàng, stylist..." class="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500">
+    </div>
+    <div class="flex-grow min-w-[150px]">
+        <label for="date-filter" class="text-sm font-medium text-gray-700 dark:text-gray-300">Ngày</label>
+        <input type="date" id="date-filter" class="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500">
+    </div>
+    <div class="flex-grow min-w-[150px]">
+        <label for="status-filter" class="text-sm font-medium text-gray-700 dark:text-gray-300">Trạng thái</label>
+        <select id="status-filter" class="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500">
+            <option value="">Tất cả</option>
+            <option value="Pending">Pending</option>
+            <option value="Confirmed">Confirmed</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+        </select>
+    </div>
+    <button id="filterBtn" class="mt-6 bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700">Lọc</button>
+</div>
+
+<!-- Bookings Table -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <table class="w-full table-auto" id="bookingTable">
+        <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Khách hàng</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Stylist</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Dịch vụ</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Thời gian</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Trạng thái</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hành động</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+            <!-- Data will be populated by JS -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Calendar View -->
+<div id="calendar-view" class="hidden mt-6">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- FullCalendar & jQuery CDN -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/locales/vi.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            const apiUrl = "https://localhost:7144/api/Booking";
+            const token = localStorage.getItem('jwtToken'); // Admin JWT
+
+            if(!token){
+                alert("Vui lòng login Admin để lấy JWT.");
+                return;
+            }
+
+            // Load bookings
+            async function loadBookings() {
+                try {
+                    const res = await fetch(apiUrl, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if(!res.ok) throw new Error("Không thể load bookings: " + res.status);
+                    const data = await res.json();
+
+                    // Map API fields to display fields (Admin view)
+                 const bookings = data.map(b => ({
+    id: b.id,
+    customerName: b.customerName || ("Customer " + b.customerName),
+    stylistName: b.stylistName || ("Stylist " + b.stylistName),
+    serviceName: b.serviceName || ("Service " + b.serviceName),
+    startTime: b.startTime,
+    endTime: b.endTime,
+    status: b.status
+}));
+
+
+                    renderBookingTable(bookings);
+                    renderCalendar(bookings);
+                } catch (err) {
+                    console.error(err);
+                    alert("Lỗi khi load bookings.");
+                }
+            }
+
+            // Render table
+            function renderBookingTable(bookings) {
+                const tbody = $('#bookingTable tbody');
+                tbody.empty();
+
+                const search = $('#search').val().toLowerCase();
+                const dateFilter = $('#date-filter').val();
+                const statusFilter = $('#status-filter').val();
+
+                bookings.forEach(b => {
+                    const startDate = new Date(b.startTime);
+                    if ((search && !((b.customerName||'').toLowerCase().includes(search) || (b.stylistName||'').toLowerCase().includes(search))) ||
+                        (dateFilter && startDate.toISOString().slice(0,10) !== dateFilter) ||
+                        (statusFilter && b.status !== statusFilter)) return;
+
+                    const statusColor = {
+                        Pending: 'bg-yellow-100 text-yellow-800',
+                        Confirmed: 'bg-blue-100 text-blue-800',
+                        Completed: 'bg-green-100 text-green-800',
+                        Cancelled: 'bg-red-100 text-red-800'
+                    }[b.status] || 'bg-gray-100 text-gray-800';
+
+                    tbody.append(`
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${b.customerName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${b.stylistName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${b.serviceName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${new Date(b.startTime).toLocaleString()}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColor}">${b.status}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button class="text-indigo-600 hover:text-indigo-900 confirm-booking" data-id="${b.id}">Confirm</button>
+                                <button class="ml-4 text-red-600 hover:text-red-900 cancel-booking" data-id="${b.id}">Cancel</button>
+                            </td>
+                        </tr>
+                    `);
+                });
+            }
+
+            // Filter button
+            $('#filterBtn').click(loadBookings);
+
+                   // Confirm booking
+        $(document).on('click', '.confirm-booking', async function() {
+            const id = $(this).data('id');
+            await fetch(`${apiUrl}/${id}/confirm`, {
+                method: 'PUT',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+            loadBookings();
+        });
+
+
+            // Cancel booking
+            $(document).on('click', '.cancel-booking', async function() {
+                const id = $(this).data('id');
+                await fetch(`${apiUrl}/${id}/cancel`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                loadBookings();
+            });
+
+            // Render FullCalendar
+            function renderCalendar(bookings) {
+                const calendarEl = document.getElementById('calendar');
+                if (!calendarEl) return;
+
+                calendarEl.innerHTML = '';
+                const calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    locale: 'vi',
+                    events: bookings.map(b => ({
+                        id: b.id,
+                        title: `${b.serviceName} - ${b.stylistName}`,
+                        start: b.startTime,
+                        end: b.endTime,
+                        color: b.status === 'Cancelled' ? 'red' : 'green'
+                    })),
+                    eventClick: info => {
+                        alert(`Booking ID: ${info.event.id}\nTitle: ${info.event.title}`);
+                    }
+                });
+                calendar.render();
+            }
+
+            // Initial load
+            loadBookings();
+        });
+    </script>
+}

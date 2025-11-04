@@ -1,4 +1,5 @@
-﻿using System;
+﻿using DataAccessObjects.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,5 +14,11 @@ namespace BusinessObjects
         public int DayOfWeek { get; set; }
         public string StartTime { get; set; } // HH:mm
         public string EndTime { get; set; }   // HH:mm
+
+        public DateTime CreatedAt { get; set; }
+
+        public DateTime? UpdatedAt { get; set; }
+
     }
 }
+

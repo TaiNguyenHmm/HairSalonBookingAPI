@@ -1,10 +1,6 @@
 ﻿using AutoMapper;
 using DataAccessObjects.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
 
 namespace BusinessObjects
 {
@@ -13,6 +9,11 @@ namespace BusinessObjects
         public StylistProfile()
         {
             CreateMap<Stylist, StylistDto>().ReverseMap();
+            CreateMap<Stylist, StylistDto>()
+     .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User.Email))
+     .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User.Phone))
+     .ForMember(dest => dest.Username, opt => opt.MapFrom(src => src.User.Username));
+
         }
     }
     }

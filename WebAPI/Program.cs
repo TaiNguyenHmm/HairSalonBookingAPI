@@ -42,12 +42,21 @@ builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 // ==========================
 // Controllers + OData + XML
 // ==========================
+// ==========================
+// Controllers + OData + JSON + XML
+// ==========================
 builder.Services
     .AddControllers(opt => opt.RespectBrowserAcceptHeader = true)
     .AddXmlSerializerFormatters()
     .AddOData(odata =>
         odata.Select().Filter().OrderBy().Expand().Count().SetMaxTop(100)
-             .AddRouteComponents("odata", GetEdmModel()));
+             .AddRouteComponents("odata", GetEdmModel()))
+    .AddJsonOptions(options =>
+    {
+        // Cho phép deserialize JSON không phân biệt hoa thường (camelCase, PascalCase)
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
+
 
 // ==========================
 // JWT Authentication

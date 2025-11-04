@@ -33,11 +33,26 @@ namespace WebAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var bookings = await _repo.GetAllAsync();
-            var dtos = _mapper.Map<IEnumerable<BookingDto>>(bookings);
+            var bookings = await _context.Bookings
+                .Include(b => b.Customer)
+                .Include(b => b.Stylist)
+                .ThenInclude(s => s.User)
+                .Include(b => b.Service)
+                .ToListAsync();
+
+            var dtos = bookings.Select(b => new BookingDto
+            {
+                Id = b.Id,
+                CustomerName = b.Customer.Username,
+                StylistName = b.Stylist.FullName,
+                ServiceName = b.Service.Name,
+                StartTime = b.StartTime,
+                EndTime = b.EndTime,
+                Status = b.Status
+            });
+
             return Ok(dtos);
         }
-
         // ===========================================
         // GET: api/Booking/{id}
         // ===========================================
@@ -224,6 +239,19 @@ namespace WebAPI.Controllers
 
             return Ok(new { message = "Đã hủy booking" });
         }
+        [HttpPut("{id}/confirm")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ConfirmBooking(int id)
+        {
+            var booking = await _repo.GetByIdAsync(id);
+            if (booking == null) return NotFound();
+
+            booking.Status = "Confirmed";
+            await _repo.UpdateAsync(booking);
+
+            return Ok(new { message = "Booking đã được confirm" });
+        }
+
 
 
 

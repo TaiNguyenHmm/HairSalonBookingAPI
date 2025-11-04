@@ -13,8 +13,11 @@ namespace Repositories
 
         public async Task<IEnumerable<Stylist>> GetAllAsync()
         {
-            return await _context.Stylists.ToListAsync();
+            return await _context.Stylists
+                .Include(s => s.User)
+                .ToListAsync();
         }
+
 
         public async Task<Stylist?> GetByIdAsync(int id)
         {
@@ -33,15 +36,25 @@ namespace Repositories
             await _context.SaveChangesAsync();
         }
 
+
+
         public async Task DeleteAsync(int id)
         {
-            var stylist = await _context.Stylists.FindAsync(id);
-            if (stylist != null)
-            {
-                _context.Stylists.Remove(stylist);
-                await _context.SaveChangesAsync();
-            }
+            var stylist = await _context.Stylists
+                .Include(s => s.StylistWorkingHours)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
+            if (stylist == null)
+                throw new Exception("Stylist không tồn tại");
+
+            if (stylist.StylistWorkingHours.Any())
+                throw new Exception("Không thể xóa stylist vì còn lịch làm việc");
+
+            _context.Stylists.Remove(stylist);
+            await _context.SaveChangesAsync();
         }
+
+
         public async Task<IEnumerable<StylistWorkingHour>> GetWorkingHoursAsync(int stylistId, int dayOfWeek)
         {
             return await _context.StylistWorkingHours
@@ -55,6 +68,7 @@ namespace Repositories
                 .Where(b => b.StylistId == stylistId && b.StartTime.Date == date.Date)
                 .ToListAsync();
         }
+
 
     }
 }

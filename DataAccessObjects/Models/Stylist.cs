@@ -12,6 +12,7 @@ public partial class Stylist
     public string? FullName { get; set; }
 
     public string? Bio { get; set; }
+    public string Status { get; set; } = "Active"; 
 
     public DateTime CreatedAt { get; set; }
 

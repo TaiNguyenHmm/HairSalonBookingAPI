@@ -120,7 +120,10 @@
                 const data = await res.json();
                 const token = data.token;
 
-                // Lưu token vào localStorage/sessionStorage
+                // 🔹 Thêm dòng này để lưu JWT vào localStorage
+                localStorage.setItem('jwtToken', token);
+
+                // Lưu token vào localStorage/sessionStorage theo checkbox
                 (rememberMe ? localStorage : sessionStorage).setItem('jwtToken', token);
 
                 // ⚡ Gửi token sang Web App để tạo cookie (Razor Page + AdminOnly policy)
@@ -144,6 +147,7 @@
             }
         });
     </script>
+
 
 
 
