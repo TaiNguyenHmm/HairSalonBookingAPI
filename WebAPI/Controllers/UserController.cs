@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using BusinessObjects;
 using DataAccessObjects.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Repositories;
 
@@ -12,11 +13,15 @@ namespace WebAPI.Controllers
     {
         private readonly IUserRepository _repo;
         private readonly IMapper _mapper;
+        private readonly IPasswordHasher<User> _hasher;
 
-        public UserController(IUserRepository repo, IMapper mapper)
+
+        public UserController(IUserRepository repo, IMapper mapper, IPasswordHasher<User> hasher)
         {
             _repo = repo;
             _mapper = mapper;
+            _hasher = hasher;
+
         }
 
         [HttpGet]
@@ -39,28 +44,42 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> Post([FromBody] UserDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
+
             var user = _mapper.Map<User>(dto);
+            user.CreatedAt = DateTime.Now;
+
+            // Sử dụng Identity PasswordHasher
+            if (!string.IsNullOrEmpty(dto.Password))
+            {
+                user.PasswordHash = _hasher.HashPassword(user, dto.Password);
+            }
+
             await _repo.AddAsync(user);
-            return CreatedAtAction(nameof(Get), new { id = user.Id }, _mapper.Map<UserDto>(user));
+
+            // Trả về UserDto, không trả password
+            var result = _mapper.Map<UserDto>(user);
+            result.Password = null;
+            return CreatedAtAction(nameof(Get), new { id = user.Id }, result);
         }
+
+
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Put(int id, [FromBody] UserDto dto)
+        public async Task<IActionResult> Put(int id, [FromBody] AdminUserDto dto)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-            var user = await _repo.GetByIdAsync(id);
-            if (user == null) return NotFound();
-            _mapper.Map(dto, user);
-            await _repo.UpdateAsync(user);
-            return NoContent();
-        }
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
             var user = await _repo.GetByIdAsync(id);
-            if (user == null) return NotFound();
-            await _repo.DeleteAsync(id);
+            if (user == null)
+                return NotFound();
+            user.Username = dto.Username;
+            user.Email = dto.Email;
+            user.Phone = dto.Phone;
+            user.Role = dto.Role;
+            user.UpdatedAt = DateTime.Now;
+
+            await _repo.UpdateAsync(user);
             return NoContent();
         }
     }

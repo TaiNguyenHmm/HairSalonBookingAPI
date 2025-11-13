@@ -21,6 +21,8 @@ public partial class HairSalonBookingDbContext : DbContext
 
     public virtual DbSet<Notification> Notifications { get; set; }
 
+
+
     public virtual DbSet<Review> Reviews { get; set; }
 
     public virtual DbSet<Service> Services { get; set; }
@@ -30,6 +32,8 @@ public partial class HairSalonBookingDbContext : DbContext
     public virtual DbSet<StylistWorkingHour> StylistWorkingHours { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
+
+
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

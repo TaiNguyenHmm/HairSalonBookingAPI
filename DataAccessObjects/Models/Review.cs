@@ -19,6 +19,8 @@ public partial class Review
 
     public DateTime? UpdatedAt { get; set; }
 
+    public bool IsHidden { get; set; } = false;
+
     public virtual Booking Booking { get; set; } = null!;
 
     public virtual User Customer { get; set; } = null!;

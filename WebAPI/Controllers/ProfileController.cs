@@ -10,7 +10,7 @@ namespace WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Customer,Stylist")] // chỉ cho phép Customer và Stylist
+    [Authorize(Roles = "Customer,Stylist,Admin")] 
     public class ProfileController : ControllerBase
     {
         private readonly IUserRepository _userRepository;

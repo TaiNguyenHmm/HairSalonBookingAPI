@@ -1,0 +1,214 @@
+﻿@page
+@model ManageServicesModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Quản lý Dịch vụ";
+}
+
+<section class="p-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <button id="add-service-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300 flex items-center">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            Thêm Dịch vụ
+        </button>
+    </div>
+
+    <!-- Services Table -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full table-auto">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tên Dịch vụ</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Mô tả</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Thời gian (phút)</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Giá (VNĐ)</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Ngày tạo</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Cập nhật lần cuối</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hành động</th>
+
+
+                    </tr>
+                </thead>
+                <tbody id="service-table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <!-- Dữ liệu động từ API -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+
+<!-- Modal: Add/Edit Service -->
+<div id="service-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-lg w-full">
+        <h3 id="modal-title" class="text-2xl font-bold mb-6 text-gray-900 dark:text-white">Thêm Dịch vụ mới</h3>
+        <form id="service-form" class="space-y-4">
+            <input type="hidden" id="service-id">
+            <div>
+                <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Tên Dịch vụ</label>
+                <input type="text" id="name" class="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" required>
+            </div>
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Mô tả</label>
+                <textarea id="description" rows="3" class="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"></textarea>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="duration" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Thời gian (phút)</label>
+                    <input type="number" id="duration" class="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" min="0" step="5" required>
+                </div>
+                <div>
+                    <label for="price" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Giá (VNĐ)</label>
+                    <input type="number" id="price" class="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" min="0" step="1000" required>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-4 pt-4">
+                <button type="button" id="close-service-modal-btn" class="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300">Hủy Bỏ</button>
+                <button type="submit" id="save-service-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">Lưu Dịch vụ</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Delete Confirmation -->
+<div id="delete-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-xl max-w-sm w-full">
+        <h3 class="text-2xl font-bold mb-4">Xác nhận Xóa</h3>
+        <p class="mb-6 text-gray-600 dark:text-gray-400">Bạn có chắc chắn muốn xóa dịch vụ này? Hành động này không thể hoàn tác.</p>
+        <div class="flex justify-end space-x-4">
+            <button type="button" id="close-delete-modal-btn" class="bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300">Hủy Bỏ</button>
+            <button type="button" id="confirm-delete-btn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Xác nhận Xóa</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+        const apiUrl = "https://localhost:7144/api/Service";
+                    const token = localStorage.getItem("jwtToken");
+
+            const serviceModal = document.getElementById('service-modal');
+            const deleteModal = document.getElementById('delete-modal');
+            const addServiceBtn = document.getElementById('add-service-btn');
+            const closeServiceModalBtn = document.getElementById('close-service-modal-btn');
+            const closeDeleteModalBtn = document.getElementById('close-delete-modal-btn');
+            const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+            const serviceTableBody = document.getElementById('service-table-body');
+            const serviceForm = document.getElementById('service-form');
+            let serviceIdToDelete = null;
+
+            // 🔹 Tải danh sách dịch vụ
+            async function loadServices() {
+                const response = await fetch(apiUrl, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                       serviceTableBody.innerHTML = data.map(service => `
+            <tr>
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">${service.name}</td>
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-xs truncate">${service.description || ""}</td>
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">${service.durationMinutes}</td>
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">${service.price.toLocaleString('vi-VN')} ₫</td>
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">${service.createdAt}</td>
+                <td class="px-6 py-4 text-sm text-gray-900 dark:text-white">${service.updatedAt}</td>
+                <td class="px-6 py-4 text-right text-sm font-medium">
+                    <button class="btn-edit text-indigo-600 hover:text-indigo-900" data-id="${service.id}">Sửa</button>
+                    <button class="btn-delete ml-4 text-red-600 hover:text-red-900" data-id="${service.id}">Xóa</button>
+                </td>
+            </tr>
+        `).join("");
+
+            }
+
+            // 🔹 Mở modal thêm mới
+            addServiceBtn.addEventListener('click', () => {
+                serviceForm.reset();
+                document.getElementById('modal-title').textContent = 'Thêm Dịch vụ mới';
+                document.getElementById('service-id').value = '';
+                serviceModal.classList.remove('hidden');
+            });
+
+            closeServiceModalBtn.addEventListener('click', () => serviceModal.classList.add('hidden'));
+            closeDeleteModalBtn.addEventListener('click', () => deleteModal.classList.add('hidden'));
+
+            // 🔹 Submit form (Thêm / Sửa)
+            serviceForm.addEventListener('submit', async e => {
+                e.preventDefault();
+                const id = document.getElementById('service-id').value;
+                const data = {
+                    name: document.getElementById('name').value,
+                    description: document.getElementById('description').value,
+                    durationMinutes: parseInt(document.getElementById('duration').value),
+                    price: parseFloat(document.getElementById('price').value)
+                };
+
+                const method = id ? "PUT" : "POST";
+                const url = id ? `${apiUrl}/${id}` : apiUrl;
+
+                const response = await fetch(url, {
+                    method,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    alert(id ? "Cập nhật thành công!" : "Thêm thành công!");
+                    serviceModal.classList.add('hidden');
+                    await loadServices();
+                } else {
+                    alert("Lỗi thao tác!");
+                }
+            });
+
+            // 🔹 Sửa / Xóa
+            serviceTableBody.addEventListener('click', async e => {
+                const target = e.target;
+                const id = target.dataset.id;
+
+                if (target.classList.contains('btn-edit')) {
+                    const response = await fetch(`${apiUrl}/${id}`, { headers: { "Authorization": `Bearer ${token}` } });
+                    const service = await response.json();
+
+                    document.getElementById('modal-title').textContent = 'Sửa Dịch vụ';
+                    document.getElementById('service-id').value = service.id;
+                    document.getElementById('name').value = service.name;
+                    document.getElementById('description').value = service.description;
+                    document.getElementById('duration').value = service.durationMinutes;
+                    document.getElementById('price').value = service.price;
+
+                    serviceModal.classList.remove('hidden');
+                }
+
+                if (target.classList.contains('btn-delete')) {
+                    serviceIdToDelete = id;
+                    deleteModal.classList.remove('hidden');
+                }
+            });
+
+            confirmDeleteBtn.addEventListener('click', async () => {
+                const response = await fetch(`${apiUrl}/${serviceIdToDelete}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    alert("Xóa thành công!");
+                    deleteModal.classList.add('hidden');
+                    await loadServices();
+                } else {
+                    alert("Không thể xóa!");
+                }
+            });
+
+            // 🔹 Load khi vào trang
+            loadServices();
+        });
+    </script>
+}

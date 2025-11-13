@@ -31,9 +31,28 @@ namespace Repositories
 
         public async Task UpdateAsync(Service service)
         {
-            _context.Services.Update(service);
+            // Tìm entity hiện có trong DB
+            var existing = await _context.Services.AsTracking().FirstOrDefaultAsync(s => s.Id == service.Id);
+            if (existing == null)
+                throw new Exception($"Service with ID {service.Id} not found.");
+
+            // Cập nhật các trường cần thiết
+            existing.Name = service.Name;
+            existing.Description = service.Description;
+            existing.Price = service.Price;
+            existing.DurationMinutes = service.DurationMinutes;
+
+            // Cập nhật thời gian sửa đổi
+            existing.UpdatedAt = DateTime.Now;
+
+            // Giữ nguyên CreatedAt (không cho EF overwrite)
+            _context.Entry(existing).Property(x => x.CreatedAt).IsModified = false;
+
+            // Ghi lại thay đổi
             await _context.SaveChangesAsync();
         }
+
+
 
         public async Task DeleteAsync(int id)
         {

@@ -1,0 +1,107 @@
+﻿@page
+@{
+    Layout = "/Pages/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Nhật ký Audit";
+}
+
+<div class="p-6">
+
+    <!-- Bảng Audit Logs -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full table-auto">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Thời gian</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">User</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hành động</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Đối tượng</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Chi tiết</th>
+                    </tr>
+                </thead>
+                <tbody id="audit-log-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                    <tr>
+                        <td colspan="5" class="text-center p-4 text-gray-500">Đang tải dữ liệu...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Phân trang -->
+    <div class="mt-6 flex justify-between items-center">
+        <div class="text-sm text-gray-700 dark:text-gray-400" id="page-info">
+            Hiển thị 1 đến 10 của 50 kết quả
+        </div>
+        <div class="flex space-x-2">
+            <button id="prev-page" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 border rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">Trước</button>
+            <button id="next-page" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white dark:bg-gray-800 border rounded-md hover:bg-gray-50 dark:hover:bg-gray-700">Sau</button>
+        </div>
+    </div>
+
+</div>
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const logBody = document.getElementById('audit-log-body');
+            const prevBtn = document.getElementById('prev-page');
+            const nextBtn = document.getElementById('next-page');
+            const infoSpan = document.getElementById('page-info');
+
+            let currentPage = 1;
+            const pageSize = 10;
+            let totalItems = 0;
+
+            async function loadAuditLogs(page = 1) {
+                logBody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">Đang tải dữ liệu...</td></tr>';
+
+                try {
+                    const response = await fetch(`https://localhost:7144/api/AuditLogs?page=${page}&pageSize=${pageSize}`);
+                    if (!response.ok) throw new Error('Không thể tải dữ liệu');
+
+                    const data = await response.json();
+                    totalItems = data.total;
+                    currentPage = data.page;
+
+                    if (data.logs.length === 0) {
+                        logBody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-gray-500">Không có dữ liệu.</td></tr>';
+                        infoSpan.textContent = '';
+                        return;
+                    }
+
+                    logBody.innerHTML = data.logs.map(log => `
+                        <tr>
+                            <td class="px-6 py-4 text-sm">${new Date(log.timestamp).toLocaleString()}</td>
+                            <td class="px-6 py-4 text-sm">${log.user?.username ?? 'Ẩn danh'} (ID: ${log.userId})</td>
+                            <td class="px-6 py-4 text-sm">${log.action}</td>
+                            <td class="px-6 py-4 text-sm">${log.entityName} (ID: ${log.entityId})</td>
+                            <td class="px-6 py-4 text-sm">${log.details ?? ''}</td>
+                        </tr>
+                    `).join('');
+
+                    const start = (currentPage - 1) * pageSize + 1;
+                    const end = Math.min(currentPage * pageSize, totalItems);
+                    infoSpan.textContent = `Hiển thị ${start} đến ${end} của ${totalItems} kết quả`;
+
+                    // enable/disable buttons
+                    prevBtn.disabled = currentPage <= 1;
+                    nextBtn.disabled = currentPage >= Math.ceil(totalItems / pageSize);
+
+                } catch (err) {
+                    console.error(err);
+                    logBody.innerHTML = '<tr><td colspan="5" class="text-center p-4 text-red-500">Lỗi khi tải dữ liệu!</td></tr>';
+                }
+            }
+
+            prevBtn.addEventListener('click', () => {
+                if (currentPage > 1) loadAuditLogs(currentPage - 1);
+            });
+
+            nextBtn.addEventListener('click', () => {
+                if (currentPage * pageSize < totalItems) loadAuditLogs(currentPage + 1);
+            });
+
+            loadAuditLogs(currentPage);
+        });
+    </script>
+}

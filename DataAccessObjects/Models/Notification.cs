@@ -16,6 +16,7 @@ public partial class Notification
     public bool IsSent { get; set; }
 
     public DateTime CreatedAt { get; set; }
+    public int DaysBeforeBooking { get; set; } = 1;
 
     public virtual Booking Booking { get; set; } = null!;
 }

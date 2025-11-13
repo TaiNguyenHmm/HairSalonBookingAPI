@@ -1,10 +1,8 @@
 ﻿using System.Net;
 using System.Net.Mail;
 
-
-namespace WebAPI.Helpers
+namespace Helpers
 {
-
     public static class EmailHelper
     {
         public static async Task SendEmailAsync(string toEmail, string subject, string body)
@@ -19,6 +17,5 @@ namespace WebAPI.Helpers
             await smtp.SendMailAsync(message);
         }
     }
-
 
 }

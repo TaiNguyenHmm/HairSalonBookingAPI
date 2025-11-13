@@ -18,13 +18,20 @@ namespace WebAPI.Controllers
         private readonly IMapper _mapper;
         private readonly BookingService _bookingService;
         private readonly HairSalonBookingDbContext _context;
+        private readonly NotificationService _notificationService;
+        private readonly INotificationRepository _notificationRepo;
 
-        public BookingController(IBookingRepository repo, IMapper mapper, BookingService bookingService, HairSalonBookingDbContext context)
+
+
+
+        public BookingController(IBookingRepository repo, IMapper mapper, BookingService bookingService, HairSalonBookingDbContext context, NotificationService notificationService, INotificationRepository notificationRepo)
         {
             _repo = repo;
             _mapper = mapper;
             _bookingService = bookingService;
             _context = context;
+            _notificationService = notificationService;
+            _notificationRepo = notificationRepo;
         }
 
         // ===========================================
@@ -244,13 +251,27 @@ namespace WebAPI.Controllers
         public async Task<IActionResult> ConfirmBooking(int id)
         {
             var booking = await _repo.GetByIdAsync(id);
-            if (booking == null) return NotFound();
+            if (booking == null) return NotFound(new { message = "Booking không tồn tại" });
 
             booking.Status = "Confirmed";
             await _repo.UpdateAsync(booking);
 
-            return Ok(new { message = "Booking đã được confirm" });
+            // Tạo notification
+            var notification = new Notification
+            {
+                BookingId = booking.Id,
+                NotificationType = booking.Service?.Name ?? "Dịch vụ",
+                IsSent = false,
+                CreatedAt = DateTime.UtcNow,
+                DaysBeforeBooking = 1
+            };
+
+            await _notificationRepo.AddAsync(notification); // chắc chắn inject _notificationRepo
+
+            return Ok(new { message = "Booking đã confirm và notification đã tạo" });
         }
+
+
 
 
 

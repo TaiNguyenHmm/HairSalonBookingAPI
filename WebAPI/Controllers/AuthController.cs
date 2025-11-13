@@ -5,10 +5,11 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Repositories;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using WebAPI.Helpers;
+using Helpers;
 
 [ApiController]
 [Route("api/auth")]
@@ -16,47 +17,19 @@ public class AuthController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly HairSalonBookingDbContext _context;
-    public AuthController(HairSalonBookingDbContext context, IConfiguration configuration)
+    private readonly IAuditService _auditService;
+
+    public AuthController(HairSalonBookingDbContext context, IConfiguration configuration, IAuditService auditService)
     {
         _context = context;
         _configuration = configuration;
+        _auditService = auditService;
     }
-    //[HttpPost("login")]
-    //public IActionResult Login([FromBody] LoginDto model)
-    //{
-    //    if (!ModelState.IsValid)
-    //        return BadRequest(new { message = "Dữ liệu không hợp lệ!" });
 
-    //    var user = _context.Users.SingleOrDefault(u =>
-    //        u.Username.ToLower().Trim() == model.Username.ToLower().Trim());
-
-    //    if (user == null)
-    //        return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu!" });
-
-    //    var hasher = new PasswordHasher<User>();
-    //    var checkResult = hasher.VerifyHashedPassword(user, user.PasswordHash, model.Password);
-    //    if (checkResult == PasswordVerificationResult.Failed)
-    //        return Unauthorized(new { message = "Sai tài khoản hoặc mật khẩu!" });
-
-    //    var expiry = model.RememberMe ? TimeSpan.FromDays(7) : TimeSpan.FromHours(1);
-
-    //    // 🔹 Sinh token bằng JwtHelper
-    //    var token = JwtHelper.GenerateToken(user, _configuration, expiry);
-
-    //    Console.WriteLine($"[API] OK user={user.Username}, role={user.Role}, exp={DateTime.UtcNow.Add(expiry):u}");
-
-    //    return Ok(new
-    //    {
-    //        token,
-    //        role = user.Role,
-    //        expiresInSeconds = (int)expiry.TotalSeconds,
-    //        username = user.Username
-    //    });
-    //}
 
     [HttpPost("login")]
     [AllowAnonymous]
-    public IActionResult Login([FromBody] LoginDto model)
+    public async Task<IActionResult> Login([FromBody] LoginDto model)
     {
         var user = _context.Users.SingleOrDefault(u =>
             u.Username.ToLower().Trim() == model.Username.ToLower().Trim());
@@ -72,6 +45,9 @@ public class AuthController : ControllerBase
         // Sinh token
         var token = JwtHelper.GenerateToken(user, _configuration, TimeSpan.FromHours(9));
 
+        // Ghi Audit log login
+        await _auditService.LogAsync(user.Id, "LOGIN", "User", user.Id, $"User {user.Username} đã đăng nhập");
+
         return Ok(new
         {
             token,
@@ -79,7 +55,6 @@ public class AuthController : ControllerBase
             role = user.Role
         });
     }
-
 
 
     [HttpPost("register")]

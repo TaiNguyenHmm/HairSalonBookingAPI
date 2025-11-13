@@ -1,0 +1,187 @@
+﻿@page
+@{
+    ViewData["Title"] = "Quản lý Đánh giá - Hair Salon Admin";
+    Layout = "/Pages/Shared/_AdminLayout.cshtml";
+}
+
+<!-- Filters -->
+<div class="mb-6 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md">
+    <form id="review-filter-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+        <div>
+            <label for="rating-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Xếp hạng</label>
+            <select id="rating-filter" class="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">Tất cả</option>
+                <option value="5">5 Sao</option>
+                <option value="4">4 Sao</option>
+                <option value="3">3 Sao</option>
+                <option value="2">2 Sao</option>
+                <option value="1">1 Sao</option>
+            </select>
+        </div>
+        <div>
+            <label for="status-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Trạng thái</label>
+            <select id="status-filter" class="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">Tất cả</option>
+                <option value="Hidden">Đã ẩn</option>
+            </select>
+        </div>
+        <div>
+            <label for="stylist-filter" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Stylist</label>
+            <select id="stylist-filter" class="mt-1 w-full p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">Tất cả Stylist</option>
+                <!-- Load stylist từ API -->
+            </select>
+        </div>
+        <div>
+            <button type="submit" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-indigo-700">Lọc</button>
+        </div>
+    </form>
+</div>
+
+<!-- Reviews Table -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full table-auto">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Khách hàng</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Xếp hạng</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Bình luận</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Lịch hẹn (Dịch vụ/Stylist)</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Trạng thái</th>
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="review-table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+            </tbody>
+          
+        </table>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const reviewTableBody = document.getElementById('review-table-body');
+            const filterForm = document.getElementById('review-filter-form');
+            const ratingFilter = document.getElementById('rating-filter');
+            const statusFilter = document.getElementById('status-filter');
+            const stylistFilter = document.getElementById('stylist-filter');
+
+            const stylistApiUrl = "https://localhost:7144/api/Stylist";
+            const reviewsApiUrl = "https://localhost:7144/api/ReviewsModeration";
+            const token = localStorage.getItem("jwtToken");
+
+            // Load stylist từ API có token
+            async function loadStylists() {
+                try {
+                    const res = await fetch(stylistApiUrl, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('Không thể tải stylist');
+                    const data = await res.json();
+                    stylistFilter.innerHTML = '<option value="">Tất cả Stylist</option>';
+                    data.forEach(s => {
+                        stylistFilter.innerHTML += `<option value="${s.fullName}">${s.fullName}</option>`;
+                    });
+                } catch (err) {
+                    console.error(err);
+                    stylistFilter.innerHTML = '<option value="">Tất cả Stylist</option>';
+                }
+            }
+
+            // Load review từ API có token
+            async function loadReviews() {
+                reviewTableBody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">Đang tải dữ liệu...</td></tr>';
+                try {
+                    const res = await fetch(reviewsApiUrl, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) throw new Error('Không thể tải dữ liệu');
+                    let data = await res.json();
+
+                    // Filter frontend nếu có
+                    if (ratingFilter.value) data = data.filter(r => r.rating === parseInt(ratingFilter.value));
+                    if (statusFilter.value && statusFilter.value === 'Hidden') data = data.filter(r => r.isHidden);
+                    if (stylistFilter.value) data = data.filter(r => r.bookingInfo.includes(stylistFilter.value));
+
+                    if (!data || data.length === 0) {
+                        reviewTableBody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-gray-500">Không có dữ liệu.</td></tr>';
+                        return;
+                    }
+
+                    reviewTableBody.innerHTML = data.map(r => `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${r.customerName}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                                <div class="flex items-center star-rating-display">
+                                    ${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-gray-900 dark:text-white max-w-sm break-words">${r.comment}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">${r.bookingInfo}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${r.isHidden ? 'bg-gray-100 text-gray-800' : 'bg-green-100 text-green-800'}">
+                                    ${r.isHidden ? 'Đã ẩn' : 'Hiển thị'}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <button data-id="${r.id}" class="action-btn text-green-600 hover:text-green-900">
+                                    ${r.isHidden ? 'Hiện' : 'Ẩn'}
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+
+                } catch (err) {
+                    console.error(err);
+                    reviewTableBody.innerHTML = '<tr><td colspan="6" class="text-center p-4 text-red-500">Lỗi khi tải dữ liệu!</td></tr>';
+                }
+            }
+
+            // Event toggle hide/hiện
+            reviewTableBody.addEventListener('click', function(e) {
+                const target = e.target;
+                if (!target.classList.contains('action-btn')) return;
+
+                const reviewId = target.dataset.id;
+                fetch(`${reviewsApiUrl}/${reviewId}/toggle-hide`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error('Không thể ẩn/hiện review');
+                    return res.json();
+                })
+                .then(data => {
+                    target.textContent = data.isHidden ? 'Hiện' : 'Ẩn';
+                    const statusCell = target.closest('tr').querySelector('td:nth-child(5) span');
+                    statusCell.textContent = data.isHidden ? 'Đã ẩn' : 'Hiển thị';
+                    statusCell.className = data.isHidden
+                        ? 'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800'
+                        : 'px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800';
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Có lỗi khi thay đổi trạng thái review');
+                });
+            });
+
+            // Event filter
+            filterForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                loadReviews();
+            });
+
+            // Khởi tạo
+            loadStylists();
+            loadReviews();
+        });
+    </script>
+}
+

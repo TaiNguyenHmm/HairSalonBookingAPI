@@ -14,6 +14,10 @@ namespace BusinessObjects
     public decimal Price { get; set; }
         public int DurationMinutes { get; set; } // Lấy trực tiếp từ DB
 
+        public DateTime CreatedAt { get; set; }
+
+        public DateTime? UpdatedAt { get; set; }
+
 
     }
 }

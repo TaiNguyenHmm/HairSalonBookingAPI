@@ -1,0 +1,119 @@
+﻿@page
+@{
+    ViewData["Title"] = "Quản lý Notifications - Hair Salon Admin";
+    Layout = "_AdminLayout";
+}
+
+<div class="flex justify-between items-center mb-6">
+    <button id="send-manual-btn"
+            class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition duration-300">
+        Gửi thủ công tất cả notification chưa gửi
+    </button>
+</div>
+
+<!-- Notifications Table -->
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full table-auto">
+            <thead class="bg-gray-50 dark:bg-gray-700">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Booking Id</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">User</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Service</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Ngày gửi trước</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Đã gửi</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Thời gian gửi</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="notification-table-body" class="divide-y divide-gray-200 dark:divide-gray-700">
+                <!-- Fill bằng JS fetch API -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const apiUrl = "https://localhost:7144/api/notifications";
+            const token = localStorage.getItem("jwtToken");
+            const tableBody = document.getElementById("notification-table-body");
+            const sendManualBtn = document.getElementById("send-manual-btn");
+
+            async function loadNotifications() {
+                      const res = await fetch(apiUrl, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("API lỗi:", text);
+            return;
+        }
+        const notifications = await res.json();
+
+                tableBody.innerHTML = notifications.map(n => `
+                    <tr>
+                        <td>${n.bookingId}</td>
+                        <td>${n.booking?.customer?.username ?? '-'}</td>
+                        <td>${n.notificationType}</td>
+                        <td>
+                            <input type="number" min="0" value="${n.daysBeforeBooking}"
+                                   class="days-input w-16 p-1 border rounded-md" data-id="${n.id}" />
+                        </td>
+                        <td>${n.isSent ? "✅" : "❌"}</td>
+                        <td>${n.sentAt ? new Date(n.sentAt).toLocaleString() : '-'}</td>
+                        <td>
+                            <button class="btn-send text-green-600 hover:text-green-900" data-id="${n.id}" ${n.isSent ? 'disabled' : ''}>
+                                Gửi ngay
+                            </button>
+                        </td>
+                    </tr>
+                `).join("");
+
+                // Gắn sự kiện thay đổi DaysBeforeBooking
+                document.querySelectorAll(".days-input").forEach(input => {
+                    input.addEventListener('change', async (e) => {
+                        const id = e.target.dataset.id;
+                        const days = parseInt(e.target.value);
+                        await fetch(`${apiUrl}/${id}/days-before`, {
+                            method: "PUT",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "Authorization": `Bearer ${token}`
+                            },
+                            body: JSON.stringify(days)
+                        });
+                        alert("Cập nhật thành công!");
+                    });
+                });
+
+                // Gắn sự kiện gửi ngay cho từng notification
+                document.querySelectorAll(".btn-send").forEach(btn => {
+                    btn.addEventListener('click', async (e) => {
+                        const id = e.target.dataset.id;
+                        // Tạm gọi SendManual để gửi tất cả chưa gửi
+                        await fetch(`${apiUrl}/send-manual`, {
+                            method: "POST",
+                            headers: { "Authorization": `Bearer ${token}` }
+                        });
+                        alert("Đã gửi các notification chưa gửi!");
+                        loadNotifications();
+                    });
+                });
+            }
+
+            // Gửi thủ công tất cả notification
+            sendManualBtn.addEventListener('click', async () => {
+                await fetch(`${apiUrl}/send-manual`, {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                alert("Đã gửi tất cả notification chưa gửi!");
+                loadNotifications();
+            });
+
+            loadNotifications();
+        });
+    </script>
+}

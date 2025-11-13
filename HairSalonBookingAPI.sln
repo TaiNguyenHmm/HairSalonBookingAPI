@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAPI", "WebAPI\WebAPI.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebApp", "WebApp\WebApp.csproj", "{99FA945C-0C59-4A3C-B75A-D865DB5FB25D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Helpers", "Helpers", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Helpers", "Helpers\Helpers.csproj", "{84AD878A-6B24-482A-A6DD-D2A08C83F3A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,9 +49,16 @@ Global
 		{99FA945C-0C59-4A3C-B75A-D865DB5FB25D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99FA945C-0C59-4A3C-B75A-D865DB5FB25D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99FA945C-0C59-4A3C-B75A-D865DB5FB25D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{84AD878A-6B24-482A-A6DD-D2A08C83F3A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{84AD878A-6B24-482A-A6DD-D2A08C83F3A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{84AD878A-6B24-482A-A6DD-D2A08C83F3A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{84AD878A-6B24-482A-A6DD-D2A08C83F3A3}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{84AD878A-6B24-482A-A6DD-D2A08C83F3A3} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {85C13F18-8D16-4F74-86CF-742DBCC73659}

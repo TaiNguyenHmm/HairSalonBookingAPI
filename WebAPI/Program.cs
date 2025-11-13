@@ -19,29 +19,58 @@ Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
 Console.WriteLine($"🔑 JWT Key = {builder.Configuration["Jwt:Key"]}");
 
 // ==========================
-// DbContext
+// Connection string + DbContext
 // ==========================
 var cs = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<HairSalonBookingDbContext>(o => o.UseSqlServer(cs));
 
 // ==========================
-// Repositories + AutoMapper
+// Audit: IHttpContextAccessor + AuditSystem
+// ==========================
+builder.Services.AddHttpContextAccessor(); // cần cho AuditSystem
+builder.Services.AddSingleton<AuditSystem>(sp =>
+{
+    return new AuditSystem(() =>
+    {
+        var httpContextAccessor = sp.GetRequiredService<IHttpContextAccessor>();
+        var claim = httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(claim, out int userId) ? userId : null;
+    });
+});
+
+// Đăng ký IAuditService cho AuthController
+builder.Services.AddScoped<IAuditService, AuditService>();
+
+builder.Services.AddDbContext<HairSalonBookingDbContext>((sp, options) =>
+{
+    options.UseSqlServer(cs)
+           .AddInterceptors(sp.GetRequiredService<AuditSystem>());
+});
+
+// ==========================
+// Repositories
 // ==========================
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IStylistRepository, StylistRepository>();
+builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<NotificationService>();
+
+
+// ==========================
+// Services
+// ==========================
+builder.Services.AddScoped<BookingService>();
+
+// ==========================
+// AutoMapper
+// ==========================
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 builder.Services.AddAutoMapper(typeof(ServiceProfile).Assembly);
 builder.Services.AddAutoMapper(typeof(StylistProfile).Assembly);
 builder.Services.AddAutoMapper(typeof(BookingProfile).Assembly);
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
-
-// ==========================
-// Controllers + OData + XML
-// ==========================
 // ==========================
 // Controllers + OData + JSON + XML
 // ==========================
@@ -53,10 +82,8 @@ builder.Services
              .AddRouteComponents("odata", GetEdmModel()))
     .AddJsonOptions(options =>
     {
-        // Cho phép deserialize JSON không phân biệt hoa thường (camelCase, PascalCase)
         options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
-
 
 // ==========================
 // JWT Authentication
@@ -75,35 +102,12 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
            IssuerSigningKey = new SymmetricSecurityKey(key),
            NameClaimType = ClaimTypes.NameIdentifier,
            RoleClaimType = ClaimTypes.Role,
-           ClockSkew = TimeSpan.FromMinutes(5) // cho phép lệch giờ ±5 phút
-       };
-
-       // 👇 Thêm đoạn này ngay sau phần TokenValidationParameters
-       opt.Events = new JwtBearerEvents
-       {
-           OnMessageReceived = ctx =>
-           {
-               Console.WriteLine("🔹 Token nhận được: " + (ctx.Token ?? "(null)"));
-               return Task.CompletedTask;
-           },
-           OnAuthenticationFailed = ctx =>
-           {
-               Console.WriteLine("❌ JWT lỗi: " + ctx.Exception);
-               return Task.CompletedTask;
-           },
-           OnTokenValidated = ctx =>
-           {
-               Console.WriteLine("✅ JWT hợp lệ! Claims:");
-               foreach (var c in ctx.Principal.Claims)
-                   Console.WriteLine($"   {c.Type}: {c.Value}");
-               return Task.CompletedTask;
-           }
+           ClockSkew = TimeSpan.FromMinutes(5)
        };
    });
 
-
 // ==========================
-// Authorization Policy
+// Authorization
 // ==========================
 builder.Services.AddAuthorization(o =>
 {
@@ -111,7 +115,7 @@ builder.Services.AddAuthorization(o =>
 });
 
 // ==========================
-// Swagger + Bearer
+// Swagger
 // ==========================
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -141,11 +145,6 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // ==========================
-// Services
-// ==========================
-builder.Services.AddScoped<BookingService>();
-
-// ==========================
 // CORS
 // ==========================
 builder.Services.AddCors(o =>
@@ -167,7 +166,6 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowWebApp");
 
-// Authentication phải trước Authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
