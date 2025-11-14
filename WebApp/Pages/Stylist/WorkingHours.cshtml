@@ -1,0 +1,132 @@
+﻿@page
+@{
+    ViewData["Title"] = "Giờ làm việc của Stylist";
+    Layout = "/Pages/Shared/_StylistDashboardLayout.cshtml"; // Layout dashboard Stylist
+}
+
+<div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md mt-6">
+    <h2 class="text-xl font-semibold text-gray-800 dark:text-white mb-6">Cập nhật lịch làm việc hàng tuần</h2>
+
+    <form id="hours-form" class="space-y-4">
+        <div id="message-container" class="hidden"></div>
+
+        @for (int day = 1; day <= 7; day++)
+        {
+            <div class="day-row grid grid-cols-4 gap-4 items-center" data-day="@day">
+                <label class="font-medium dark:text-white">
+                    @(
+                                    day == 1 ? "Thứ 2" :
+                                    day == 2 ? "Thứ 3" :
+                                    day == 3 ? "Thứ 4" :
+                                    day == 4 ? "Thứ 5" :
+                                    day == 5 ? "Thứ 6" :
+                                    day == 6 ? "Thứ 7" : "Chủ Nhật"
+                                    )
+            </label>
+            <input type="checkbox" id="day-@day-check" class="day-toggle hidden">
+            <label for="day-@day-check" class="day-label col-span-1 text-center p-2 rounded-md border dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700">Làm việc</label>
+            <div class="col-span-2 grid grid-cols-2 gap-2">
+                <input type="time" id="day-@day-start" class="p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" disabled>
+                <input type="time" id="day-@day-end" class="p-2 border rounded-md dark:bg-gray-700 dark:border-gray-600" disabled>
+            </div>
+        </div>
+                }
+
+        <div class="flex justify-end pt-4">
+            <button type="submit" id="save-hours-btn" class="w-full md:w-auto bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700">Lưu thay đổi</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const hoursForm = document.getElementById('hours-form');
+            const messageContainer = document.getElementById('message-container');
+
+            function getJwtToken() {
+                return localStorage.getItem('jwtToken');
+            }
+
+            document.querySelectorAll('.day-toggle').forEach(checkbox => {
+                checkbox.addEventListener('change', function () {
+                    const row = this.closest('.day-row');
+                    const timeInputs = row.querySelectorAll('input[type="time"]');
+                    timeInputs.forEach(input => {
+                        input.disabled = !this.checked;
+                        if (!this.checked) input.value = '';
+                    });
+                });
+            });
+
+            async function loadWorkingHours() {
+                const token = getJwtToken();
+
+                // TODO: Thay bằng API thật
+                // const response = await fetch('/api/stylists/myworkinghours', { headers: { 'Authorization': `Bearer ${token}` } });
+                // const workingHours = await response.json();
+
+                const workingHours = [
+                    { dayOfWeek: 2, startTime: '09:00', endTime: '17:00' },
+                    { dayOfWeek: 3, startTime: '09:00', endTime: '17:00' },
+                    { dayOfWeek: 4, startTime: '10:00', endTime: '18:00' },
+                    { dayOfWeek: 5, startTime: '10:00', endTime: '18:00' }
+                ];
+
+                hoursForm.reset();
+                document.querySelectorAll('.day-row input[type="time"]').forEach(input => input.disabled = true);
+
+                workingHours.forEach(wh => {
+                    const check = document.getElementById(`day-${wh.dayOfWeek}-check`);
+                    if (check) {
+                        check.checked = true;
+                        const start = document.getElementById(`day-${wh.dayOfWeek}-start`);
+                        const end = document.getElementById(`day-${wh.dayOfWeek}-end`);
+                        start.value = wh.startTime;
+                        start.disabled = false;
+                        end.value = wh.endTime;
+                        end.disabled = false;
+                    }
+                });
+            }
+
+            hoursForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                messageContainer.classList.add('hidden');
+
+                const workingHoursData = [];
+                document.querySelectorAll('.day-row').forEach(row => {
+                    const day = parseInt(row.dataset.day);
+                    const isChecked = row.querySelector('.day-toggle').checked;
+                    const startTime = row.querySelector('input[type="time"][id$="-start"]').value;
+                    const endTime = row.querySelector('input[type="time"][id$="-end"]').value;
+
+                    if (isChecked) {
+                        if (!startTime || !endTime) {
+                            showMessage('Vui lòng nhập đủ giờ bắt đầu và kết thúc cho ngày đã chọn.', 'error');
+                            throw new Error('Validation failed');
+                        }
+                        workingHoursData.push({ DayOfWeek: day, StartTime: startTime, EndTime: endTime });
+                    }
+                });
+
+                const token = getJwtToken();
+
+                // TODO: Gọi API PUT thật
+                // await fetch('/api/stylists/myworkinghours', { method:'PUT', headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'}, body: JSON.stringify(workingHoursData) });
+
+                await new Promise(r => setTimeout(r, 500)); // Giả lập
+                showMessage('Cập nhật giờ làm việc thành công!', 'success');
+            });
+
+            function showMessage(message, type = 'error') {
+                messageContainer.innerHTML = message;
+                messageContainer.className = `p-4 rounded-md mb-4 ${type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+                window.scrollTo(0, 0);
+            }
+
+            loadWorkingHours();
+        });
+    </script>
+}

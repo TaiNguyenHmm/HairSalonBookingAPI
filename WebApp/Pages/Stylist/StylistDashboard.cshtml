@@ -1,0 +1,170 @@
+﻿@page
+@model StylistDashboardModel
+@{
+    Layout = "/Pages/Shared/_StylistDashboardLayout.cshtml";
+    ViewData["Title"] = "Lịch làm việc hôm nay";
+}
+
+<div class="p-6">
+    <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6">
+        Các lịch hẹn đã được xác nhận
+    </h2>
+
+    <div class="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
+        <table class="min-w-full divide-y divide-gray-300 dark:divide-gray-700">
+            <thead class="bg-gray-100 dark:bg-gray-700">
+                <tr>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Khách hàng</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Dịch vụ</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Bắt đầu</th>
+                    <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Kết thúc</th>
+                    <th class="px-4 py-3 text-center text-sm font-semibold text-gray-700 dark:text-gray-300">Hành động</th>
+                </tr>
+            </thead>
+            <tbody id="bookingList" class="divide-y divide-gray-200 dark:divide-gray-700">
+                <!-- JS sẽ đổ dữ liệu vào đây -->
+            </tbody>
+        </table>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        const apiUrl = "https://localhost:7144/api/Stylist";
+        const token = localStorage.getItem("jwtToken");
+
+        // Hàm decode JWT cơ bản để lấy userId
+        function getUserIdFromToken(token) {
+            if (!token) return null;
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"];
+            } catch (err) {
+                console.error("Lỗi decode token:", err);
+                return null;
+            }
+        }
+
+        let userId = localStorage.getItem("userId") || getUserIdFromToken(token);
+        let stylistId = localStorage.getItem("stylistId") ? parseInt(localStorage.getItem("stylistId")) : null;
+
+        console.log("userId:", userId);
+        console.log("stylistId (trước init):", stylistId);
+
+        document.addEventListener("DOMContentLoaded", init);
+
+        async function init() {
+            if (!userId) {
+                alert("Lỗi: không tìm thấy userId. Vui lòng đăng nhập lại.");
+                return;
+            }
+
+            // Nếu chưa có stylistId → gọi backend để lấy
+            if (!stylistId) {
+                try {
+                    const res = await fetch(`${apiUrl}/get-stylist-id/${userId}`, {
+                        headers: { "Authorization": `Bearer ${token}` }
+                    });
+
+                    if (!res.ok) {
+                        alert("Lỗi: không lấy được Stylist ID từ server.");
+                        return;
+                    }
+
+                    stylistId = parseInt(await res.text());
+                    console.log("stylistId API trả về =", stylistId);
+
+                    if (!stylistId) {
+                        alert("Lỗi: không tìm thấy Stylist ID cho user này.");
+                        return;
+                    }
+
+                    localStorage.setItem("stylistId", stylistId);
+                } catch (err) {
+                    console.error("Lỗi khi gọi API get-stylist-id:", err);
+                    alert("Lỗi khi lấy Stylist ID từ server.");
+                    return;
+                }
+            }
+
+            console.log("stylistId cuối cùng =", stylistId);
+
+            // Gọi API bookings
+            loadBookings();
+        }
+
+        async function loadBookings() {
+            if (!stylistId) {
+                console.error("Không có stylistId để load bookings");
+                return;
+            }
+
+            try {
+                const res = await fetch(`${apiUrl}/bookings/${stylistId}`, {
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Accept": "application/json"
+                    }
+                });
+
+                if (!res.ok) {
+                    console.error("API bookings trả lỗi:", res.status);
+                    alert("Lỗi khi tải danh sách bookings.");
+                    return;
+                }
+
+                const data = await res.json();
+                console.log("Booking data:", data);
+
+                const list = document.getElementById("bookingList");
+                list.innerHTML = "";
+
+                if (!Array.isArray(data)) return;
+
+                data.forEach(b => {
+                    list.innerHTML += `
+                        <tr class="hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+                            <td class="px-4 py-3">${b.customerName}</td>
+                            <td class="px-4 py-3">${b.serviceName}</td>
+                            <td class="px-4 py-3">${formatDate(b.startTime)}</td>
+                            <td class="px-4 py-3">${formatDate(b.endTime)}</td>
+                            <td class="px-4 py-3 text-center">
+                                <button onclick="completeBooking(${b.id})"
+                                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                                    Complete
+                                </button>
+                            </td>
+                        </tr>`;
+                });
+            } catch (err) {
+                console.error("Lỗi loadBookings:", err);
+                alert("Lỗi khi tải danh sách bookings.");
+            }
+        }
+
+        async function completeBooking(id) {
+            if (!confirm("Xác nhận hoàn thành dịch vụ?")) return;
+
+            try {
+                const res = await fetch(`${apiUrl}/complete/${id}`, {
+                    method: "PUT",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+
+                if (res.ok) {
+                    alert("Đã chuyển sang trạng thái Completed!");
+                    loadBookings();
+                } else {
+                    alert("Có lỗi xảy ra khi hoàn thành booking.");
+                }
+            } catch (err) {
+                console.error("Lỗi completeBooking:", err);
+                alert("Lỗi khi gửi yêu cầu complete booking.");
+            }
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleString("vi-VN");
+        }
+    </script>
+}

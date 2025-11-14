@@ -134,11 +134,24 @@
                 });
 
                 // Redirect theo role
-                if (data.role && data.role.toLowerCase() === 'admin') {
-                    window.location.href = '/AdminDashboard/Dashboard';
-                } else {
-                    window.location.href = '/ServicesCustomer/Services';
-                }
+                      // Redirect theo role
+        if (data.role && data.role.toLowerCase() === "admin") {
+
+            window.location.href = "/AdminDashboard/Dashboard";
+
+        } else if (data.role && data.role.toLowerCase() === "stylist") {
+
+            // Lưu stylistId để StylistDashboard dùng
+            localStorage.setItem("stylistId", data.stylistId);
+            window.location.href = "/Stylist/StylistDashboard";
+
+        } else {
+
+            // Mặc định là Customer
+            window.location.href = "/ServicesCustomer/Services";
+
+        }
+
 
             } catch (err) {
                 console.error(err);

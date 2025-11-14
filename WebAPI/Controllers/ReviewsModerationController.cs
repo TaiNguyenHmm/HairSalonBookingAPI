@@ -19,12 +19,18 @@ namespace WebAPI.Controllers
 
         // Lấy danh sách review (cả ẩn và hiển thị)
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] int? stylistId = null)
         {
-            var reviews = await _context.Reviews
+            var query = _context.Reviews
                 .Include(r => r.Customer)
                 .Include(r => r.Booking)
                 .ThenInclude(b => b.Stylist)
+                .AsQueryable();
+
+            if (stylistId.HasValue)
+                query = query.Where(r => r.Booking.StylistId == stylistId.Value);
+
+            var reviews = await query
                 .OrderByDescending(r => r.CreatedAt)
                 .Select(r => new
                 {
@@ -40,6 +46,8 @@ namespace WebAPI.Controllers
 
             return Ok(reviews);
         }
+
+
 
         // Ẩn / hiện review
         [HttpPut("{id}/toggle-hide")]
@@ -60,5 +68,8 @@ namespace WebAPI.Controllers
                 review.UpdatedAt
             });
         }
+
+    
+
     }
 }

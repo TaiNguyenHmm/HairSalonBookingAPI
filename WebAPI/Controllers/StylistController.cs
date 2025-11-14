@@ -184,8 +184,54 @@ namespace WebAPI.Controllers
             return Ok(new { message = "Lưu giờ làm việc thành công." });
         }
 
+        [HttpGet("bookings/{stylistId}")]
+        public async Task<IActionResult> GetStylistBookings(int stylistId)
+        {
+            var bookings = await _context.Bookings
+                .Include(b => b.Customer)
+                .Include(b => b.Service)
+                .Where(b => b.StylistId == stylistId && b.Status == "Confirmed")
+                .OrderBy(b => b.StartTime)
+                .ToListAsync();
+
+            var result = bookings.Select(b => new
+            {
+                b.Id,
+                CustomerName = b.Customer.Username,
+                ServiceName = b.Service.Name,
+                b.StartTime,
+                b.EndTime,
+                b.Status
+            });
+
+            return Ok(result);
+        }
+
+        [HttpPut("complete/{id}")]
+        public async Task<IActionResult> CompleteBooking(int id)
+        {
+            var booking = await _context.Bookings.FindAsync(id);
+            if (booking == null) return NotFound();
+
+            booking.Status = "Completed";
+            booking.UpdatedAt = DateTime.Now;
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Booking đã hoàn thành!" });
+        }
 
 
+        [HttpGet("get-stylist-id/{userId}")]
+        public async Task<IActionResult> GetStylistId(int userId)
+        {
+            var stylist = await _context.Stylists
+                .FirstOrDefaultAsync(s => s.UserId == userId);
+
+            if (stylist == null)
+                return NotFound();
+
+            return Ok(stylist.Id);
+        }
 
 
 

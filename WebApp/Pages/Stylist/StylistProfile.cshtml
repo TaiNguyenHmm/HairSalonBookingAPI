@@ -1,0 +1,208 @@
+﻿@page
+@{
+    ViewData["Title"] = "Hồ sơ của bạn";
+    Layout = "/Pages/Shared/_StylistDashboardLayout.cshtml";
+}
+
+<div class="py-16 md:py-24">
+    <div class="container mx-auto px-6 max-w-3xl">
+        <h1 class="text-4xl md:text-5xl font-bold mb-8 text-center text-gray-900 dark:text-white">
+            Hồ Sơ Của Bạn
+        </h1>
+
+        <!-- Thông báo chung -->
+        <div id="global-message" class="mb-6 hidden"></div>
+
+        <!-- Thông tin tài khoản -->
+        <section class="form-section mb-10">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">Thông tin tài khoản</h2>
+
+            <form id="profile-form" class="space-y-6">
+                <div>
+                    <label for="role" class="form-label">Vai trò của bạn :</label>
+                    <input type="text" id="role" name="role" class="form-input bg-gray-200 dark:bg-gray-600 cursor-not-allowed" disabled readonly value="Stylist">
+                </div>
+
+                <div>
+                    <label for="username" class="form-label">Họ và tên :</label>
+                    <input type="text" id="username" name="username" class="form-input" required>
+                </div>
+
+                <div>
+                    <label for="email" class="form-label">Email :</label>
+                    <input type="email" id="email" name="email" class="form-input" required>
+                </div>
+
+                <div>
+                    <label for="phone" class="form-label">Số điện thoại :</label>
+                    <input type="tel" id="phone" name="phone" class="form-input">
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" id="save-profile-btn" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition duration-300">
+                        Lưu thay đổi thông tin
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Đổi mật khẩu -->
+        <section class="form-section">
+            <h2 class="text-2xl font-bold text-gray-800 dark:text-white mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">Đổi mật khẩu</h2>
+
+            <form id="password-form" class="space-y-6">
+                <div>
+                    <label for="current-password" class="form-label">Mật khẩu hiện tại :</label>
+                    <input type="password" id="current-password" name="currentPassword" class="form-input" required autocomplete="current-password">
+                </div>
+
+                <div>
+                    <label for="new-password" class="form-label">Mật khẩu mới :</label>
+                    <input type="password" id="new-password" name="newPassword" class="form-input" required autocomplete="new-password">
+                </div>
+
+                <div>
+                    <label for="confirm-password" class="form-label">Xác nhận mật khẩu mới :</label>
+                    <input type="password" id="confirm-password" name="confirmNewPassword" class="form-input" required autocomplete="new-password">
+                </div>
+
+                <div class="pt-4">
+                    <button type="submit" id="save-password-btn" class="w-full bg-gray-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 transition duration-300">
+                        Đổi mật khẩu
+                    </button>
+                </div>
+            </form>
+        </section>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const apiBase = "https://localhost:7144/api/Stylist";
+        const passwordApi = "https://localhost:7144/api/Profile/ChangePassword";
+
+        function getJwtToken() {
+            return localStorage.getItem("jwtToken");
+        }
+
+        function showMessage(type, text) {
+            const msg = document.getElementById("global-message");
+            msg.className = `p-4 mb-6 rounded-lg text-center text-white ${type === 'success' ? 'bg-green-600' : 'bg-red-600'}`;
+            msg.textContent = text;
+            msg.classList.remove("hidden");
+            setTimeout(() => msg.classList.add("hidden"), 4000);
+        }
+
+        async function loadProfile() {
+            const token = getJwtToken();
+            const stylistId = parseInt(localStorage.getItem("stylistId"));
+            if (!token || !stylistId) {
+                showMessage('error', 'Vui lòng đăng nhập lại.');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${apiBase}/${stylistId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error('Không thể tải hồ sơ: ' + errText);
+                }
+
+                const data = await res.json();
+                document.getElementById('username').value = data.fullName || '';
+                document.getElementById('email').value = data.Email || '';
+                document.getElementById('phone').value = data.Phone || '';
+
+            } catch (err) {
+                console.error(err);
+                showMessage('error', err.message);
+            }
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = getJwtToken();
+            const stylistId = parseInt(localStorage.getItem("stylistId"));
+            if (!token || !stylistId) {
+                showMessage('error', 'Phiên đăng nhập hết hạn.');
+                return;
+            }
+
+            const dto = {
+                FullName: document.getElementById('username').value.trim(),
+                Email: document.getElementById('email').value.trim(),
+                Phone: document.getElementById('phone').value.trim()
+            };
+
+            try {
+                const res = await fetch(`${apiBase}/${stylistId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dto)
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error('Cập nhật thất bại: ' + errText);
+                }
+
+                showMessage('success', 'Cập nhật thông tin thành công!');
+                await loadProfile();
+
+            } catch (err) {
+                console.error(err);
+                showMessage('error', err.message);
+            }
+        });
+
+        document.getElementById('password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const token = getJwtToken();
+            if (!token) {
+                showMessage('error', 'Phiên đăng nhập hết hạn.');
+                return;
+            }
+
+            const dto = {
+                currentPassword: document.getElementById('current-password').value,
+                newPassword: document.getElementById('new-password').value,
+                confirmNewPassword: document.getElementById('confirm-password').value
+            };
+
+            if (dto.newPassword !== dto.confirmNewPassword) {
+                showMessage('error', 'Mật khẩu xác nhận không khớp.');
+                return;
+            }
+
+            try {
+                const res = await fetch(passwordApi, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dto)
+                });
+
+                if (!res.ok) {
+                    const errText = await res.text();
+                    throw new Error('Đổi mật khẩu thất bại: ' + errText);
+                }
+
+                showMessage('success', 'Đổi mật khẩu thành công!');
+                document.getElementById('password-form').reset();
+
+            } catch (err) {
+                console.error(err);
+                showMessage('error', err.message);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', loadProfile);
+    </script>
+}
